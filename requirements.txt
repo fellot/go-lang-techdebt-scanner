@@ -1,0 +1,7 @@
+fastapi>=0.95.0
+uvicorn>=0.21.1
+pydantic>=1.10.7
+pyyaml>=6.0
+matplotlib>=3.5.0
+tabulate>=0.8.9
+colorama>=0.4.4

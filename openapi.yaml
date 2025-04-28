@@ -1,0 +1,421 @@
+openapi: 3.0.3
+info:
+  title: Go Technical Debt Scanner API
+  description: |
+    API for analyzing technical debt in Go repositories.
+    
+    This API allows you to scan Go repositories for various types of technical debt including:
+    - Code complexity (Cyclomatic and Cognitive)
+    - Code duplication
+    - Test coverage & quality
+    - Dependency health
+    - Code churn and stability
+    - Code readability and maintainability
+    
+    The API returns normalized debt scores (0-100) for each category and an overall score.
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8000
+    description: Local development server
+  - url: https://api.techdebtscanner.example.com
+    description: Production server
+
+tags:
+  - name: Scanning
+    description: Operations related to repository scanning
+  - name: Monitoring
+    description: Operations related to service monitoring
+
+paths:
+  /scan:
+    post:
+      summary: Start a technical debt scan
+      description: |
+        Initiates a scan of a Go repository for technical debt.
+        Returns a scan ID that can be used to check the status and retrieve results.
+      operationId: startScan
+      tags:
+        - Scanning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ScanRequest'
+            examples:
+              basic:
+                summary: Basic scan request
+                value:
+                  repo_path: "/path/to/go/repository"
+              withConfig:
+                summary: Scan request with configuration overrides
+                value:
+                  repo_path: "/path/to/go/repository"
+                  config_overrides:
+                    thresholds:
+                      high: 75
+                      medium: 45
+                    weights:
+                      complexity: 2.0
+                      duplication: 1.5
+      responses:
+        '202':
+          description: Scan accepted and queued
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScanStatus'
+              example:
+                status: "pending"
+                scan_id: "550e8400-e29b-41d4-a716-446655440000"
+                message: "Scan started"
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Repository path does not exist: /path/to/nonexistent/repo"
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Internal server error"
+
+  /scan/{scan_id}:
+    get:
+      summary: Get scan results
+      description: |
+        Retrieves the results or status of a technical debt scan.
+        If the scan is complete, returns the full results.
+        If the scan is still running, returns the current status.
+      operationId: getScanResult
+      tags:
+        - Scanning
+      parameters:
+        - name: scan_id
+          in: path
+          description: ID of the scan to retrieve
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Scan results or status
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/ScanStatus'
+                  - $ref: '#/components/schemas/ScanResponse'
+              examples:
+                pending:
+                  summary: Pending scan
+                  value:
+                    status: "pending"
+                    scan_id: "550e8400-e29b-41d4-a716-446655440000"
+                    repo_path: "/path/to/go/repository"
+                    message: "Scan queued"
+                running:
+                  summary: Running scan
+                  value:
+                    status: "running"
+                    scan_id: "550e8400-e29b-41d4-a716-446655440000"
+                    repo_path: "/path/to/go/repository"
+                    message: "Scan in progress"
+                completed:
+                  summary: Completed scan
+                  value:
+                    status: "completed"
+                    repo_path: "/path/to/go/repository"
+                    message: "Scan completed successfully"
+                    overall_score: 42.5
+                    overall_level: "MEDIUM"
+                    category_scores:
+                      complexity:
+                        score: 65.3
+                        level: "MEDIUM"
+                      duplication:
+                        score: 30.2
+                        level: "LOW"
+                      test_quality:
+                        score: 55.7
+                        level: "MEDIUM"
+                      dependencies:
+                        score: 25.0
+                        level: "LOW"
+                      churn:
+                        score: 40.1
+                        level: "MEDIUM"
+                      readability:
+                        score: 38.7
+                        level: "LOW"
+                    metrics:
+                      complexity:
+                        cyclomatic:
+                          average: 12.5
+                          violations: 15
+                        cognitive:
+                          average: 8.3
+                          violations: 10
+                failed:
+                  summary: Failed scan
+                  value:
+                    status: "failed"
+                    scan_id: "550e8400-e29b-41d4-a716-446655440000"
+                    repo_path: "/path/to/go/repository"
+                    message: "Scan failed: Error accessing repository"
+        '404':
+          description: Scan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Scan not found"
+    delete:
+      summary: Delete scan results
+      description: Deletes the results of a technical debt scan.
+      operationId: deleteScanResult
+      tags:
+        - Scanning
+      parameters:
+        - name: scan_id
+          in: path
+          description: ID of the scan to delete
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Scan deleted successfully
+        '404':
+          description: Scan not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                detail: "Scan not found"
+
+  /scans:
+    get:
+      summary: List all scans
+      description: Lists all scans and their statuses.
+      operationId: listScans
+      tags:
+        - Scanning
+      responses:
+        '200':
+          description: List of scans
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      description: Status of the scan
+                      enum: [pending, running, completed, failed]
+                    repo_path:
+                      type: string
+                      description: Path to the repository
+                    message:
+                      type: string
+                      description: Additional status message
+              example:
+                "550e8400-e29b-41d4-a716-446655440000":
+                  status: "completed"
+                  repo_path: "/path/to/repo1"
+                  message: "Scan completed successfully"
+                "661f9511-f3ab-52e5-b827-557766551111":
+                  status: "running"
+                  repo_path: "/path/to/repo2"
+                  message: "Scan in progress"
+
+  /health:
+    get:
+      summary: Check service health
+      description: Checks the health of the service and required Go tools.
+      operationId: healthCheck
+      tags:
+        - Monitoring
+      responses:
+        '200':
+          description: Service health information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              example:
+                status: "healthy"
+                version: "1.0.0"
+                go_tools:
+                  go: true
+                  gocyclo: true
+                  gocognit: true
+                  scc: true
+                  golangci-lint: true
+                  golint: true
+                  git: true
+
+components:
+  schemas:
+    ScanRequest:
+      type: object
+      required:
+        - repo_path
+      properties:
+        repo_path:
+          type: string
+          description: Path to the Go repository
+          example: "/path/to/go/repository"
+        config_overrides:
+          type: object
+          description: Optional configuration overrides
+          additionalProperties: true
+          example:
+            thresholds:
+              high: 75
+              medium: 45
+            weights:
+              complexity: 2.0
+              duplication: 1.5
+
+    ScanStatus:
+      type: object
+      required:
+        - status
+        - scan_id
+      properties:
+        status:
+          type: string
+          description: Status of the scan
+          enum: [pending, running, completed, failed]
+          example: "pending"
+        scan_id:
+          type: string
+          format: uuid
+          description: Unique identifier for the scan
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        message:
+          type: string
+          description: Additional status message
+          example: "Scan started"
+        repo_path:
+          type: string
+          description: Path to the repository
+          example: "/path/to/go/repository"
+
+    CategoryScore:
+      type: object
+      required:
+        - score
+        - level
+      properties:
+        score:
+          type: number
+          format: float
+          description: Normalized score (0-100)
+          example: 65.3
+        level:
+          type: string
+          description: Debt level
+          enum: [LOW, MEDIUM, HIGH]
+          example: "MEDIUM"
+
+    ScanResponse:
+      type: object
+      required:
+        - repo_path
+        - overall_score
+        - overall_level
+        - category_scores
+        - metrics
+      properties:
+        status:
+          type: string
+          description: Status of the scan
+          enum: [completed]
+          example: "completed"
+        repo_path:
+          type: string
+          description: Path to the scanned repository
+          example: "/path/to/go/repository"
+        message:
+          type: string
+          description: Additional status message
+          example: "Scan completed successfully"
+        overall_score:
+          type: number
+          format: float
+          description: Overall technical debt score (0-100)
+          example: 42.5
+        overall_level:
+          type: string
+          description: Overall debt level
+          enum: [LOW, MEDIUM, HIGH]
+          example: "MEDIUM"
+        category_scores:
+          type: object
+          description: Scores for each debt category
+          additionalProperties:
+            $ref: '#/components/schemas/CategoryScore'
+        metrics:
+          type: object
+          description: Detailed metrics for each category
+          additionalProperties: true
+
+    HealthResponse:
+      type: object
+      required:
+        - status
+        - version
+        - go_tools
+      properties:
+        status:
+          type: string
+          description: Service status
+          example: "healthy"
+        version:
+          type: string
+          description: API version
+          example: "1.0.0"
+        go_tools:
+          type: object
+          description: Availability of required Go tools
+          additionalProperties:
+            type: boolean
+          example:
+            go: true
+            gocyclo: true
+            gocognit: true
+            scc: true
+            golangci-lint: true
+            golint: true
+            git: true
+
+    Error:
+      type: object
+      required:
+        - detail
+      properties:
+        detail:
+          type: string
+          description: Error message
+          example: "Repository path does not exist"

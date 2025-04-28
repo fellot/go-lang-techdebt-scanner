@@ -1,0 +1,70 @@
+# Technical Debt Scanner Configuration
+
+# Thresholds for debt levels
+thresholds:
+  high: 70  # Scores above this are considered high debt
+  medium: 40  # Scores above this are considered medium debt
+  low: 0  # Scores above this are considered low debt
+
+# Weights for calculating overall score
+weights:
+  complexity: 1.5
+  duplication: 1.0
+  test_quality: 1.5
+  dependencies: 1.0
+  churn: 0.8
+  readability: 1.2
+
+# Complexity metrics configuration
+complexity:
+  cyclomatic_threshold: 15  # Functions with complexity above this will be flagged
+  cognitive_threshold: 15  # Functions with complexity above this will be flagged
+  cyclomatic_ideal: 5  # Ideal average cyclomatic complexity
+  cyclomatic_worst: 25  # Worst average cyclomatic complexity
+  cognitive_ideal: 5  # Ideal average cognitive complexity
+  cognitive_worst: 25  # Worst average cognitive complexity
+  cyclomatic_weight: 1.0  # Weight for cyclomatic complexity in overall complexity score
+  cognitive_weight: 1.0  # Weight for cognitive complexity in overall complexity score
+
+# Duplication metrics configuration
+duplication:
+  ideal_percentage: 0  # Ideal duplication percentage
+  worst_percentage: 20  # Worst duplication percentage
+
+# Test quality metrics configuration
+test_quality:
+  ideal_coverage: 80  # Ideal test coverage percentage
+  worst_coverage: 20  # Worst test coverage percentage
+  ideal_ratio: 0.8  # Ideal test-to-code ratio
+  worst_ratio: 0.1  # Worst test-to-code ratio
+  coverage_weight: 1.5  # Weight for coverage in overall test quality score
+  ratio_weight: 1.0  # Weight for test-to-code ratio in overall test quality score
+
+# Dependency metrics configuration
+dependencies:
+  ideal_outdated: 0  # Ideal percentage of outdated dependencies
+  worst_outdated: 50  # Worst percentage of outdated dependencies
+  worst_vulnerabilities: 5  # Worst number of vulnerable dependencies
+  outdated_weight: 1.0  # Weight for outdated dependencies in overall dependency score
+  vulnerable_weight: 2.0  # Weight for vulnerable dependencies in overall dependency score
+
+# Churn metrics configuration
+churn:
+  analysis_period_days: 90  # Number of days to analyze for churn
+  ideal_churn_rate: 1  # Ideal churn rate (lines per commit)
+  worst_churn_rate: 20  # Worst churn rate (lines per commit)
+
+# Readability metrics configuration
+readability:
+  ideal_lint_issues: 0  # Ideal number of lint issues per file
+  worst_lint_issues: 5  # Worst number of lint issues per file
+  ideal_fmt_issues: 0  # Ideal number of formatting issues per file
+  worst_fmt_issues: 3  # Worst number of formatting issues per file
+  ideal_comment_ratio: 20  # Ideal comment ratio percentage
+  worst_comment_ratio: 5  # Worst comment ratio percentage
+  ideal_function_length: 15  # Ideal average function length
+  worst_function_length: 50  # Worst average function length
+  lint_weight: 1.0  # Weight for lint issues in overall readability score
+  fmt_weight: 1.0  # Weight for formatting issues in overall readability score
+  comment_weight: 0.8  # Weight for comment ratio in overall readability score
+  function_length_weight: 1.2  # Weight for function length in overall readability score
